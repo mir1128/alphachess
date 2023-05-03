@@ -21,6 +21,16 @@ class ChineseChessBoard(GameInterface):
         self.num_steps_no_capture = 0
         self.winner = None
 
+    def get_all_piece_position(self):
+        piece_positions = {}
+        for i, row in enumerate(self.board):
+            for j, piece in enumerate(row):
+                if piece != '_':
+                    if piece not in piece_positions:
+                        piece_positions[piece] = []
+                    piece_positions[piece].append((i, j))
+        return piece_positions
+
     def generate_next_states(self):
         next_states = []
         for x in range(10):
@@ -688,6 +698,12 @@ def test_red_win_king_eat_king():
     assert chess_board.winner == 'black'
 
 
+def test_get_all_piece_position():
+    chess_board = ChineseChessBoard()
+    pos = chess_board.get_all_piece_position()
+
+    a = 0;
+
 if __name__ == '__main__':
     test_king_moves()
     test_advisor_moves()
@@ -699,3 +715,4 @@ if __name__ == '__main__':
     red_win()
     draw()
     test_red_win_king_eat_king()
+    test_get_all_piece_position()
