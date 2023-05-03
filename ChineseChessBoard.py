@@ -1,4 +1,8 @@
-class ChineseChessBoard:
+from GameInterface import GameInterface
+import random
+
+
+class ChineseChessBoard(GameInterface):
     def __init__(self):
         self.board = [
             ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'],
@@ -16,6 +20,62 @@ class ChineseChessBoard:
         self.is_game_over = False
         self.num_steps_no_capture = 0
         self.winner = None
+
+    def generate_next_states(self):
+        next_states = []
+        for x in range(10):
+            for y in range(9):
+                piece = self.board[x][y]
+                if piece != '_' and piece.islower() != self.is_red_turn:
+                    piece_moves = self.get_piece_moves((x, y))
+                    for move in piece_moves:
+                        next_state = self.copy()
+                        next_state.move_piece((x, y), move)
+                        next_states.append((next_state, (x, y), move))
+        return next_states
+
+    def random_move(self):
+        legal_moves = []
+        for x in range(10):
+            for y in range(9):
+                piece = self.board[x][y]
+                if piece != '_' and piece.islower() == self.is_red_turn:
+                    piece_moves = self.get_piece_moves((x, y))
+                    for move in piece_moves:
+                        legal_moves.append(((x, y), move))
+        if legal_moves:
+            return random.choice(legal_moves)
+        return None
+
+    def get_final_reward(self):
+        if self.is_draw():
+            return 0
+        if self.winner is not None:
+            if self.winner == 'red' if self.is_red_turn else 'black':
+                return 1
+            else:
+                return -1
+        return None
+
+    def copy(self):
+        copied_board = ChineseChessBoard()
+        copied_board.board = [row.copy() for row in self.board]
+        copied_board.is_red_turn = self.is_red_turn
+        copied_board.is_game_over = self.is_game_over
+        copied_board.num_steps_no_capture = self.num_steps_no_capture
+        copied_board.winner = self.winner
+        return copied_board
+
+    def game_over(self):
+        if self.is_game_over:
+            return True
+        if self.is_draw():
+            return True
+        if self.is_checkmate():
+            self.is_game_over = True
+            self.winner = 'black' if self.is_red_turn else 'red'
+            return True
+        return False
 
     def move_piece(self, start_pos, end_pos):
         if not self.is_game_over:
@@ -354,6 +414,14 @@ class ChineseChessBoard:
                 piece = self.board[x][y]
                 row.append(board_symbols[piece])
             print(f"{x} {' '.join(row)}")
+
+    def show_result(self):
+        if self.is_draw():
+            print("游戏结束，和棋！")
+        elif self.winner is not None:
+            print(f"游戏结束，胜利者是 {self.winner}！")
+        else:
+            print("游戏未结束")
 
 
 def test_king_moves():
