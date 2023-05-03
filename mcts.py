@@ -81,6 +81,9 @@ class MCTS:
 
             print(f"Loop {_}/{num_searches}")
 
+        if len(self.root.children) == 0:
+            return None, None, None
+
         # Find the best move based on the visit count of the children
         best_child = max(self.root.children, key=lambda node: node.visit_count)
         return best_child.state

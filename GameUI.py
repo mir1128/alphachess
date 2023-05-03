@@ -8,6 +8,8 @@ from ChineseChessBoard import ChineseChessBoard
 import tkinter as tk
 from tkinter import messagebox
 
+from mcts import MCTS
+
 
 class GameUI(object):
     def __init__(self):
@@ -58,26 +60,38 @@ class GameUI(object):
                         else:
                             board.move_piece(src, dst)
                             is_piece_picked = False
+                            self.refesh_board(board)
+
+                            board_state, ai_move_start_pos, ai_move_end_pos = MCTS((board, None, None)).search(15)
+                            if ai_move_start_pos is None or ai_move_end_pos is None:
+                                break
+                            board.move_piece(ai_move_start_pos, ai_move_end_pos)
 
                 if event.type == QUIT:
                     exit()
 
-                self.__screen.blit(self.__background, (0, 0))
-                piece_dict = board.get_all_piece_position()
-                for piece in piece_dict:
-                    for pos in piece_dict[piece]:
-                        self.put_piece(piece, pos)
-                pygame.display.update()
+                self.refesh_board(board)
 
                 if board.is_game_over:
-                    if board.is_draw():
-                        show_message_box('游戏结束', '和棋')
-                    if board.winner == 'red':
-                        show_message_box('游戏结束', '红棋胜利')
-                    else:
-                        show_message_box('游戏结束', '黑棋胜利')
+                    self.game_over(board)
                     board = ChineseChessBoard()
                     continue
+
+    def game_over(self, board):
+        if board.is_draw():
+            show_message_box('游戏结束', '和棋')
+        if board.winner == 'red':
+            show_message_box('游戏结束', '红棋胜利')
+        else:
+            show_message_box('游戏结束', '黑棋胜利')
+
+    def refesh_board(self, board):
+        self.__screen.blit(self.__background, (0, 0))
+        piece_dict = board.get_all_piece_position()
+        for piece in piece_dict:
+            for pos in piece_dict[piece]:
+                self.put_piece(piece, pos)
+        pygame.display.update()
 
     def get_piece_by_position(self, board, button_up_pos):
         row, col = self.to_board_pos(button_up_pos)
