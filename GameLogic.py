@@ -22,7 +22,8 @@ class GameLogic:
             self.chess_board.move_piece(player_start_pos, player_end_pos)
 
             # 执行MCTS搜索找到最佳走法
-            board_state, ai_move_start_pos, ai_move_end_pos = MCTS((self.chess_board, None, None)).search(30)
+            c = 1.0 if self.chess_board.is_red_turn() else 1.2
+            board_state, ai_move_start_pos, ai_move_end_pos = MCTS((self.chess_board, None, None), c).search(30)
 
             # 更新棋盘状态
             self.chess_board.move_piece(ai_move_start_pos, ai_move_end_pos)

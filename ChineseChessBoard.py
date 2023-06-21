@@ -704,6 +704,7 @@ def test_get_all_piece_position():
 
     a = 0;
 
+
 if __name__ == '__main__':
     test_king_moves()
     test_advisor_moves()

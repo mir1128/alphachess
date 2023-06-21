@@ -15,9 +15,9 @@ class MCTSNode:
 
 
 class MCTS:
-    def __init__(self, game: (GameInterface, None, None), c=1.0):
+    def __init__(self, game: (GameInterface, None, None), is_red_turn):
         self.root = MCTSNode(game)
-        self.c = c
+        self.is_red_turn = is_red_turn
 
     def ucb1(self, node):
         exploitation = node.total_reward / node.visit_count if node.visit_count > 0 else 0
@@ -27,6 +27,7 @@ class MCTS:
 
     def selection(self, node):
         best_child = max(node.children, key=self.ucb1)
+        self.is_red_turn = not self.is_red_turn
         return best_child
 
     def expansion(self, node):
