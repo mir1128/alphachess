@@ -1,16 +1,20 @@
 import math
 import random
 
+import ChineseChessBoard
 
-class TreeNode():
-    def __init__(self, board, parent):
+
+class TreeNode:
+    def __init__(self, board: ChineseChessBoard, parent):
+        # init associated board state
         self.board = board
 
         # init is node terminal flag
-        if self.board.is_win() or self.board.is_draw():
+        if self.board.game_over():
             # we have a terminal node
             self.is_terminal = True
 
+        # otherwise
         else:
             # we have a non-terminal node
             self.is_terminal = False
@@ -28,22 +32,24 @@ class TreeNode():
         self.score = 0
 
         # init current node's children
-        self.children = {}
+        self.children = []
 
 
-class MCTS():
-    def search(self, init_state):
+class Mcts:
+    def __init__(self):
+        self.root = None
+
+    def search(self, initial_state):
         self.root = TreeNode(initial_state, None)
 
         for iteration in range(1000):
             node = self.select(self.root)
-            score = self.rollout(node.board)
-            self.backpropagate(node, score)
 
-        # pick up the best move in the current position
+            score = self.rollout(node.board)
+
+            self.backpropagate(node, score)
         try:
             return self.get_best_move(self.root, 0)
-
         except:
             pass
 
@@ -57,36 +63,23 @@ class MCTS():
         return node
 
     def expand(self, node):
-        states = node.board.generate_states()
-        for state in states:
-            if str(state.position) not in node.children:
-                new_node = TreeNode(state, node)
-                node.children[str(state.position)] = new_node
+        next_states = node.board.generate_next_states()
+        for state in next_states:
+            child_node = TreeNode(state, node)
+            node.children.append(child_node)
 
-                # case when node is fully expanded
-                if len(states) == len(node.children):
-                    node.is_fully_expanded = True
-
-                # return newly created node
-                return new_node
+        if node.children:
+            return random.choice(node.children)
+        return None
 
     def rollout(self, board):
-        while not board.is_win():
-            # try to make a move
-            try:
-                # make the on board
-                board = random.choice(board.generate_states())
-
-            # no moves available
-            except:
-                # return a draw score
-                return 0
-
-        # return score from the player "x" perspective
-        if board.player_2 == 'x':
-            return 1
-        elif board.player_2 == 'o':
-            return -1
+        # Here, you need to implement a function to simulate a complete game
+        # and return the final reward based on the rules of Chinese Chess.
+        while not board.game_over():
+            # You can use a random or lightweight policy to select moves during simulation
+            next_state = board.random_move()
+            state = next_state
+        return board.get_final_reward()
 
     def backpropagate(self, node, score):
         while node is not None:
@@ -100,23 +93,15 @@ class MCTS():
             node = node.parent
 
     def get_best_move(self, node, exploration_constant):
-        # define best score & best moves
         best_score = float('-inf')
         best_moves = []
 
-        # loop over child nodes
-        for child_node in node.children.values():
-            # define current player
-            if child_node.board.player_2 == 'x':
-                current_player = 1
-            elif child_node.board.player_2 == 'o':
-                current_player = -1
+        for child_node in node.children:
+            current_player = 1 if child_node.board.is_red_turn else -1
 
-            # get move score using UCT formula
             move_score = current_player * child_node.score / child_node.visits + exploration_constant * math.sqrt(
                 math.log(node.visits / child_node.visits))
 
-            # better move has been found
             if move_score > best_score:
                 best_score = move_score
                 best_moves = [child_node]
@@ -125,5 +110,4 @@ class MCTS():
             elif move_score == best_score:
                 best_moves.append(child_node)
 
-        # return one of the best moves randomly
         return random.choice(best_moves)

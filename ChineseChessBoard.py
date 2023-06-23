@@ -21,6 +21,9 @@ class ChineseChessBoard(GameInterface):
         self.num_steps_no_capture = 0
         self.winner = None
 
+    def encode(self):
+        return "".join(["".join(row) for row in self.board])
+
     def get_all_piece_position(self):
         piece_positions = {}
         for i, row in enumerate(self.board):
@@ -61,7 +64,7 @@ class ChineseChessBoard(GameInterface):
         if self.is_draw():
             return 0
         if self.winner is not None:
-            if self.winner == 'red' if self.is_red_turn else 'black':
+            if self.winner == 'red':
                 return 1
             else:
                 return -1
@@ -717,3 +720,7 @@ if __name__ == '__main__':
     draw()
     test_red_win_king_eat_king()
     test_get_all_piece_position()
+
+    board = ChineseChessBoard()
+    print(board.encode())
+
