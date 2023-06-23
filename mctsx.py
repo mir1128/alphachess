@@ -39,15 +39,17 @@ class Mcts:
     def __init__(self):
         self.root = None
 
-    def search(self, initial_state):
+    def search(self, initial_state, num_searches):
         self.root = TreeNode(initial_state, None)
 
-        for iteration in range(1000):
+        for _ in range(num_searches):
             node = self.select(self.root)
 
             score = self.rollout(node.board)
 
             self.backpropagate(node, score)
+
+            print(f"Loop {_}/{num_searches}")
         try:
             return self.get_best_move(self.root, 0)
         except:
@@ -65,7 +67,7 @@ class Mcts:
     def expand(self, node):
         next_states = node.board.generate_next_states()
         for state in next_states:
-            child_node = TreeNode(state, node)
+            child_node = TreeNode(state[0], node)
             node.children.append(child_node)
 
         if node.children:
@@ -78,7 +80,7 @@ class Mcts:
         while not board.game_over():
             # You can use a random or lightweight policy to select moves during simulation
             next_state = board.random_move()
-            state = next_state
+            board.move_piece(next_state[0], next_state[1])
         return board.get_final_reward()
 
     def backpropagate(self, node, score):

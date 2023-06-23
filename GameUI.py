@@ -63,7 +63,7 @@ class GameUI(object):
                             self.refesh_board(board)
 
                             c = 1.0 if board.is_red_turn else 1.2
-                            board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board)
+                            board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
                             if ai_move_start_pos is None or ai_move_end_pos is None:
                                 break
                             board.move_piece(ai_move_start_pos, ai_move_end_pos)
