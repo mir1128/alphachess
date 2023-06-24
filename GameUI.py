@@ -60,18 +60,22 @@ class GameUI(object):
                         else:
                             board.move_piece(src, dst)
                             is_piece_picked = False
-                            self.refesh_board(board)
+                            self.refresh_board(board)
 
-                            c = 1.0 if board.is_red_turn else 1.2
-                            board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
-                            if ai_move_start_pos is None or ai_move_end_pos is None:
+                            # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
+                            node = Mcts().search(board, 20)
+
+                            if node is None or node.board.game_over():
+                                show_message_box('游戏结束', '')
+
+                            if node.source is None or node.target is None:
                                 break
-                            board.move_piece(ai_move_start_pos, ai_move_end_pos)
+                            board.move_piece(node.source, node.target)
 
                 if event.type == QUIT:
                     exit()
 
-                self.refesh_board(board)
+                self.refresh_board(board)
 
                 if board.is_game_over:
                     self.game_over(board)
@@ -86,7 +90,7 @@ class GameUI(object):
         else:
             show_message_box('游戏结束', '黑棋胜利')
 
-    def refesh_board(self, board):
+    def refresh_board(self, board):
         self.__screen.blit(self.__background, (0, 0))
         piece_dict = board.get_all_piece_position()
         for piece in piece_dict:

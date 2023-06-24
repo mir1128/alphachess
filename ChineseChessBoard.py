@@ -52,7 +52,7 @@ class ChineseChessBoard(GameInterface):
         for x in range(10):
             for y in range(9):
                 piece = self.board[x][y]
-                if piece != '_' and piece.islower() == self.is_red_turn:
+                if piece != '_' and piece.isupper() == self.is_red_turn:
                     piece_moves = self.get_piece_moves((x, y))
                     for move in piece_moves:
                         legal_moves.append(((x, y), move))

@@ -5,9 +5,11 @@ import ChineseChessBoard
 
 
 class TreeNode:
-    def __init__(self, board: ChineseChessBoard, parent):
+    def __init__(self, board: ChineseChessBoard, parent, source, target):
         # init associated board state
         self.board = board
+        self.source = source
+        self.target = target
 
         # init is node terminal flag
         if self.board.game_over():
@@ -40,7 +42,7 @@ class Mcts:
         self.root = None
 
     def search(self, initial_state, num_searches):
-        self.root = TreeNode(initial_state, None)
+        self.root = TreeNode(initial_state, None, None, None)
 
         for _ in range(num_searches):
             node = self.select(self.root)
@@ -67,8 +69,10 @@ class Mcts:
     def expand(self, node):
         next_states = node.board.generate_next_states()
         for state in next_states:
-            child_node = TreeNode(state[0], node)
+            child_node = TreeNode(state[0], node, state[1], state[2])
             node.children.append(child_node)
+
+        node.is_fully_expanded = True
 
         if node.children:
             return random.choice(node.children)
@@ -80,6 +84,9 @@ class Mcts:
         while not board.game_over():
             # You can use a random or lightweight policy to select moves during simulation
             next_state = board.random_move()
+
+            # print(board.encode())
+
             board.move_piece(next_state[0], next_state[1])
         return board.get_final_reward()
 
@@ -101,8 +108,11 @@ class Mcts:
         for child_node in node.children:
             current_player = 1 if child_node.board.is_red_turn else -1
 
-            move_score = current_player * child_node.score / child_node.visits + exploration_constant * math.sqrt(
-                math.log(node.visits / child_node.visits))
+            exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
+            exploration = exploration_constant * math.sqrt(math.log(node.visits / child_node.visits)) \
+                if child_node.visits > 0 else best_score
+
+            move_score = exploitation + exploration
 
             if move_score > best_score:
                 best_score = move_score
