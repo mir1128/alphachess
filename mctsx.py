@@ -71,15 +71,19 @@ class Mcst:
     def expand(self, node):
         next_states = node.board.generate_next_states()
 
-        # Get the policy prediction from the neural network
+        # Get the policy and value predictions from the neural network
         state_tensor = to_tensor(node)
-        policy_pred, _ = self.model.predict(np.expand_dims(state_tensor, axis=0))
+        policy_pred, value_pred = self.model.predict(np.expand_dims(state_tensor, axis=0))
         policy_pred = np.squeeze(policy_pred, axis=0)
 
         for i, next_state in enumerate(next_states):
             board, src, dst = next_state
             probability = get_probability(src, dst, policy_pred)
             child_node = TreeNode(board, node, src, dst, probability)
+
+            # Set the value of the node to the value prediction from the neural network
+            child_node.score = value_pred
+
             node.children.append(child_node)
 
         node.is_fully_expanded = True
@@ -132,9 +136,10 @@ class Mcst:
         for child_node in node.children:
             current_player = 1 if child_node.board.is_red_turn else -1
 
+            # ucb1 = (score / N_i) + p * sqrt(log(total)/N_i)
+            # puct = (score / N_i) + p * sqrt(total)/ (N_i + 1)
             exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
-            exploration = exploration_constant * math.sqrt(math.log(node.visits / child_node.visits)) \
-                if child_node.visits > 0 else best_score
+            exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (1 + child_node.visits)
 
             move_score = exploitation + exploration
 
@@ -147,7 +152,6 @@ class Mcst:
                 best_moves.append(child_node)
 
         return random.choice(best_moves)
-
 
 def create_uci_labels():
     labels_array = []
