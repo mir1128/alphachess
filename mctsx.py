@@ -1,15 +1,17 @@
 import math
 import random
+import numpy as np
 
-import ChineseChessBoard
+from ChineseChessBoard import ChineseChessBoard
 
 
 class TreeNode:
-    def __init__(self, board: ChineseChessBoard, parent, source, target):
+    def __init__(self, board: ChineseChessBoard, parent, source, target, policy_pred = None):
         # init associated board state
         self.board = board
         self.source = source
         self.target = target
+        self.policy_pred = policy_pred
 
         # init is node terminal flag
         if self.board.game_over():
@@ -38,10 +40,11 @@ class TreeNode:
 
 
 class Mcst:
-    def __init__(self):
+    def __init__(self, model):
         self.root = None
+        self.model = model
 
-    def search(self, initial_state, num_searches):
+    def search(self, initial_state, num_searches, last_step):
         self.root = TreeNode(initial_state, None, None, None)
 
         for _ in range(num_searches):
@@ -63,20 +66,39 @@ class Mcst:
                 node = self.get_best_move(node, 2)
             else:
                 return self.expand(node)
-
         return node
 
     def expand(self, node):
         next_states = node.board.generate_next_states()
-        for state in next_states:
-            child_node = TreeNode(state[0], node, state[1], state[2])
+
+        # Get the policy prediction from the neural network
+        state_tensor = to_tensor(node, None, None)
+        policy_pred, _ = self.model.predict(np.expand_dims(state_tensor, axis=0))
+        policy_pred = np.squeeze(policy_pred, axis=0)
+
+        for i, state in enumerate(next_states):
+            child_node = TreeNode(state[0], node, state[1], state[2], policy_pred[i])
             node.children.append(child_node)
 
         node.is_fully_expanded = True
 
         if node.children:
-            return random.choice(node.children)
+            # Select the child with the highest prior probability from the policy head
+            best_child = max(node.children, key=lambda child: child.prior)
+            return best_child
         return None
+
+    # def expand(self, node):
+    #     next_states = node.board.generate_next_states()
+    #     for state in next_states:
+    #         child_node = TreeNode(state[0], node, state[1], state[2])
+    #         node.children.append(child_node)
+    #
+    #     node.is_fully_expanded = True
+    #
+    #     if node.children:
+    #         return random.choice(node.children)
+    #     return None
 
     def rollout(self, board):
         # Here, you need to implement a function to simulate a complete game
@@ -123,3 +145,70 @@ class Mcst:
                 best_moves.append(child_node)
 
         return random.choice(best_moves)
+
+
+def to_tensor(node : TreeNode):
+    # one-hot representation for each piece
+    brd = node.board
+    turn = 1 if brd.is_red_turn else 0
+
+    parent = node.parent
+    last_step = (parent.source, parent.target) if parent is not None else None
+
+    piece_to_onehot = {
+        'R': np.array([1, 0, 0, 0, 0, 0, 0]),
+        'N': np.array([0, 1, 0, 0, 0, 0, 0]),
+        'B': np.array([0, 0, 1, 0, 0, 0, 0]),
+        'A': np.array([0, 0, 0, 1, 0, 0, 0]),
+        'K': np.array([0, 0, 0, 0, 1, 0, 0]),
+        'C': np.array([0, 0, 0, 0, 0, 1, 0]),
+        'P': np.array([0, 0, 0, 0, 0, 0, 1]),
+        'r': np.array([-1, 0, 0, 0, 0, 0, 0]),
+        'n': np.array([0, -1, 0, 0, 0, 0, 0]),
+        'b': np.array([0, 0, -1, 0, 0, 0, 0]),
+        'a': np.array([0, 0, 0, -1, 0, 0, 0]),
+        'k': np.array([0, 0, 0, 0, -1, 0, 0]),
+        'c': np.array([0, 0, 0, 0, 0, -1, 0]),
+        'p': np.array([0, 0, 0, 0, 0, 0, -1]),
+        '_': np.array([0, 0, 0, 0, 0, 0, 0])
+    }
+
+    # create an empty tensor
+    tensor = np.zeros((10, 9, 9))  # the dimension of the tensor is (10, 9, 9)
+
+    # fill in the tensor with one-hot encoding of the pieces
+    for i in range(10):
+        for j in range(9):
+            tensor[i, j, :7] = piece_to_onehot[brd.board[i][j]]
+
+    # fill in the tensor with the last move
+    if last_step is not None:
+        source, target = last_step
+        if source is not None and target is not None:
+            tensor[source[0], source[1], 7] = -1
+            tensor[target[0], target[1], 7] = 1
+
+    # fill in the tensor with the current turn
+    tensor[:, :, 8] = turn
+
+    return tensor
+
+def test_to_tensor():
+    test_board = ChineseChessBoard()
+    # Create a root node
+    root = TreeNode(test_board, None, None, None)
+
+    for _ in range(5):
+        test_board = test_board.copy()
+        move = test_board.random_move()
+        test_board.move_piece(*move)
+
+        node = TreeNode(test_board, root, *move)
+
+        print(test_board.encode())
+        tensor = to_tensor(node)
+        root = node
+
+if __name__ == '__main__':
+    test_to_tensor()
+    exit()
