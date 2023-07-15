@@ -118,7 +118,8 @@ def is_same_side(board, src, dst):
     return board.board[src_row][src_col].islower() == board.board[dst_row][dst_col]
 
 def show_message_box(title, message):
-    easygui.msgbox(message, title)
+    # easygui.msgbox(message, title)
+    pass
 
 def game_over(board):
     if board.is_draw():

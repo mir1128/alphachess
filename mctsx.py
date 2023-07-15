@@ -4,14 +4,14 @@ import numpy as np
 
 from ChineseChessBoard import ChineseChessBoard
 
-
 class TreeNode:
     def __init__(self, board: ChineseChessBoard, parent, source, target, policy_pred = None):
         # init associated board state
         self.board = board
         self.source = source
         self.target = target
-        self.policy_pred = policy_pred
+        # 概率
+        self.probability = policy_pred
 
         # init is node terminal flag
         if self.board.game_over():
@@ -38,9 +38,6 @@ class TreeNode:
         # init current node's children
         self.children = []
 
-        # 概率
-        self.probability = policy_pred
-
 class Mcst:
     def __init__(self, model):
         self.root = None
@@ -48,7 +45,7 @@ class Mcst:
 
     def search(self, initial_state, num_searches, last_step):
         src, dst = last_step if last_step is not None else (None, None)
-        self.root = TreeNode(initial_state, src, dst, None)
+        self.root = TreeNode(initial_state, None, src, dst, None)
 
         for _ in range(num_searches):
             node = self.select(self.root)
@@ -79,16 +76,17 @@ class Mcst:
         policy_pred, _ = self.model.predict(np.expand_dims(state_tensor, axis=0))
         policy_pred = np.squeeze(policy_pred, axis=0)
 
-        for board, src, dst in enumerate(next_states):
-            policy_pred = get_probability(src, dst, policy_pred)
-            child_node = TreeNode(board, node, src, dst, policy_pred)
+        for i, next_state in enumerate(next_states):
+            board, src, dst = next_state
+            probability = get_probability(src, dst, policy_pred)
+            child_node = TreeNode(board, node, src, dst, probability)
             node.children.append(child_node)
 
         node.is_fully_expanded = True
 
         if node.children:
             # Select the child with the highest prior probability from the policy head
-            best_child = max(node.children, key=lambda child: child.prior)
+            best_child = max(node.children, key=lambda child: child.probability)
             return best_child
         return None
 
@@ -192,13 +190,13 @@ def to_uci_label(src, dst):
 
     return uci_label
 
+uci_labels = create_uci_labels()
+
 def get_probability(src, dst, policy_pred):
     # Convert the source and destination coordinates to a UCI label
     uci_label = to_uci_label(src, dst)
 
     # Create the UCI labels array
-    uci_labels = create_uci_labels()
-
     # Find the index of the UCI label in the labels array
     label_index = uci_labels.index(uci_label)
 
