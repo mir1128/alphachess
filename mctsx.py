@@ -124,12 +124,7 @@ class Mcst:
             node.visits += 1
 
             # update node's score
-            if node.children:
-                # if the node has children, set the node's score to the mean value of the children
-                node.score = sum(child.score for child in node.children) / len(node.children)
-            else:
-                # if the node has no children (it's a leaf node), set the node's score to the outcome of the game
-                node.score = score
+            node.score += score
 
             # set node to parent
             node = node.parent
