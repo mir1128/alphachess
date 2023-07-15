@@ -40,6 +40,7 @@ class GameUI(object):
             for event in pygame.event.get():
                 if event.type == MOUSEBUTTONUP:
                     button_up_pos = pygame.mouse.get_pos()
+                    # 如果当前没有拾起棋子, 记录被拾起的棋子和它的位置
                     if not is_piece_picked:
                         which_piece_is_picked = self.get_piece_by_position(board, button_up_pos)
                         if which_piece_is_picked != '_':
@@ -47,20 +48,29 @@ class GameUI(object):
                             piece_src_position = button_up_pos
                             logger.info("pick an chess %s, src pos is %s", str(which_piece_is_picked), str(piece_src_position))
                     else:
+                        # 如果已经有棋子被拾起
                         src = self.to_board_pos(piece_src_position)
                         dst = self.to_board_pos(button_up_pos)
                         another_pick = self.get_piece_by_position(board, button_up_pos)
 
-                        # pick another self chess
+                        # 目标位置是自己的棋子
                         if another_pick != '_' and self.is_same_side(board, src, dst):
                             which_piece_is_picked = another_pick
                             piece_src_position = button_up_pos
                             logger.info("pick another chess %s, src pos is %s", str(which_piece_is_picked), str(piece_src_position))
                             break
                         else:
-                            board.move_piece(src, dst)
-                            is_piece_picked = False
-                            self.refresh_board(board)
+                            if board.is_valid_move(src, dst):
+                                board.move_piece(src, dst)
+                                is_piece_picked = False
+                                self.refresh_board(board)
+                            else:
+                                is_piece_picked = False
+                                piece_src_position = None
+                                break
+
+                            if board.is_game_over:
+                                break
 
                             # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
                             node = Mcts().search(board, 20)
@@ -113,10 +123,11 @@ class GameUI(object):
 
 
 def show_message_box(title, message):
-    root = tk.Tk()
-    root.withdraw()  # 隐藏 tkinter 主窗口
-    messagebox.showinfo(title, message)  # 显示消息框
-    root.destroy()  # 销毁 tkinter 主窗口
+    # root = tk.Tk()
+    # root.withdraw()  # 隐藏 tkinter 主窗口
+    # messagebox.showinfo(title, message)  # 显示消息框
+    # root.destroy()  # 销毁 tkinter 主窗口
+    pass
 
 
 if __name__ == '__main__':

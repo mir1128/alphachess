@@ -51,7 +51,7 @@ class Mcts:
 
             self.backpropagate(node, score)
 
-            print(f"Loop {_}/{num_searches}")
+            print(f"Loop {_ + 1}/{num_searches}")
         try:
             return self.get_best_move(self.root, 0)
         except:
