@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 
 from sys import exit
-from pygame.locals import *
-from log.logger import logger
-import pygame
-from ChineseChessBoard import ChineseChessBoard
-import easygui
 
+import easygui
+import pygame
+from pygame.locals import *
+
+from ChineseChessBoard import ChineseChessBoard
+from log.logger import logger
 from mctsx import Mcst
+import net
 
 
 class GameUI(object):
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("cchess")
+        self.model = net.create_chinese_chess_model()
         self.__screen = pygame.display.set_mode((720, 800), 0, 32)
         self.__background = pygame.image.load('images/boardchess.jpg').convert()
 
@@ -72,7 +75,7 @@ class GameUI(object):
                                 break
 
                             # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
-                            node = Mcst().search(board, 20)
+                            node = Mcst(self.model).search(board, 20, (src, dst))
 
                             if node is None or node.source is None or node.target is None:
                                 logger.info("mcst return invalid node: %s", str(node))
