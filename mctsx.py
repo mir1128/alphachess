@@ -37,7 +37,7 @@ class TreeNode:
         self.children = []
 
 
-class Mcts:
+class Mcst:
     def __init__(self):
         self.root = None
 

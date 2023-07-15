@@ -5,10 +5,9 @@ from pygame.locals import *
 from log.logger import logger
 import pygame
 from ChineseChessBoard import ChineseChessBoard
-import tkinter as tk
-from tkinter import messagebox
+import easygui
 
-from mctsx import Mcts
+from mctsx import Mcst
 
 
 class GameUI(object):
@@ -42,44 +41,46 @@ class GameUI(object):
                     button_up_pos = pygame.mouse.get_pos()
                     # 如果当前没有拾起棋子, 记录被拾起的棋子和它的位置
                     if not is_piece_picked:
-                        which_piece_is_picked = self.get_piece_by_position(board, button_up_pos)
+                        which_piece_is_picked = get_piece_by_position(board, button_up_pos)
                         if which_piece_is_picked != '_':
                             is_piece_picked = True
                             piece_src_position = button_up_pos
                             logger.info("pick an chess %s, src pos is %s", str(which_piece_is_picked), str(piece_src_position))
                     else:
                         # 如果已经有棋子被拾起
-                        src = self.to_board_pos(piece_src_position)
-                        dst = self.to_board_pos(button_up_pos)
-                        another_pick = self.get_piece_by_position(board, button_up_pos)
+                        src = to_board_pos(piece_src_position)
+                        dst = to_board_pos(button_up_pos)
+                        another_pick = get_piece_by_position(board, button_up_pos)
 
                         # 目标位置是自己的棋子
-                        if another_pick != '_' and self.is_same_side(board, src, dst):
+                        if another_pick != '_' and is_same_side(board, src, dst):
                             which_piece_is_picked = another_pick
                             piece_src_position = button_up_pos
                             logger.info("pick another chess %s, src pos is %s", str(which_piece_is_picked), str(piece_src_position))
                             break
                         else:
-                            if board.is_valid_move(src, dst):
-                                board.move_piece(src, dst)
-                                is_piece_picked = False
-                                self.refresh_board(board)
-                            else:
+                            if not board.is_valid_move(src, dst):
                                 is_piece_picked = False
                                 piece_src_position = None
                                 break
+
+                            board.move_piece(src, dst)
+                            is_piece_picked = False
+                            self.refresh_board(board)
 
                             if board.is_game_over:
                                 break
 
                             # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
-                            node = Mcts().search(board, 20)
+                            node = Mcst().search(board, 20)
 
-                            if node is None or node.board.game_over():
-                                show_message_box('游戏结束', '')
-
-                            if node.source is None or node.target is None:
+                            if node is None or node.source is None or node.target is None:
+                                logger.info("mcst return invalid node: %s", str(node))
                                 break
+
+                            if node.board.game_over():
+                                break
+
                             board.move_piece(node.source, node.target)
 
                 if event.type == QUIT:
@@ -88,17 +89,9 @@ class GameUI(object):
                 self.refresh_board(board)
 
                 if board.is_game_over:
-                    self.game_over(board)
+                    game_over(board)
                     board = ChineseChessBoard()
                     continue
-
-    def game_over(self, board):
-        if board.is_draw():
-            show_message_box('游戏结束', '和棋')
-        if board.winner == 'red':
-            show_message_box('游戏结束', '红棋胜利')
-        else:
-            show_message_box('游戏结束', '黑棋胜利')
 
     def refresh_board(self, board):
         self.__screen.blit(self.__background, (0, 0))
@@ -108,27 +101,29 @@ class GameUI(object):
                 self.put_piece(piece, pos)
         pygame.display.update()
 
-    def get_piece_by_position(self, board, button_up_pos):
-        row, col = self.to_board_pos(button_up_pos)
-        return board.board[row][col]
+def get_piece_by_position(board, button_up_pos):
+    row, col = to_board_pos(button_up_pos)
+    return board.board[row][col]
 
-    def to_board_pos(self, pos):
-        x, y = pos
-        return int(y/80), int(x/80)
+def to_board_pos(pos):
+    x, y = pos
+    return int(y/80), int(x/80)
 
-    def is_same_side(self, board, src, dst):
-        src_row, src_col = src
-        dst_row, dst_col = dst
-        return board.board[src_row][src_col].islower() == board.board[dst_row][dst_col]
-
+def is_same_side(board, src, dst):
+    src_row, src_col = src
+    dst_row, dst_col = dst
+    return board.board[src_row][src_col].islower() == board.board[dst_row][dst_col]
 
 def show_message_box(title, message):
-    # root = tk.Tk()
-    # root.withdraw()  # 隐藏 tkinter 主窗口
-    # messagebox.showinfo(title, message)  # 显示消息框
-    # root.destroy()  # 销毁 tkinter 主窗口
-    pass
+    easygui.msgbox(message, title)
 
+def game_over(board):
+    if board.is_draw():
+        show_message_box('游戏结束', '和棋')
+    if board.winner == 'red':
+        show_message_box('游戏结束', '红棋胜利')
+    else:
+        show_message_box('游戏结束', '黑棋胜利')
 
 if __name__ == '__main__':
     e = GameUI()
