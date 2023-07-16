@@ -50,11 +50,9 @@ class Mcst:
         for _ in range(num_searches):
             node = self.select(self.root)
 
-            score = self.rollout(node.board)
-
-            self.backpropagate(node, score)
-
-            print(f"Loop {_ + 1}/{num_searches}")
+            # score = self.rollout(node.board)
+            self.backpropagate(node)
+            # print(f"Loop {_ + 1}/{num_searches}")
         try:
             return self.get_best_move(self.root, 0)
         except:
@@ -79,7 +77,7 @@ class Mcst:
         for i, next_state in enumerate(next_states):
             board, src, dst = next_state
             probability = get_probability(src, dst, policy_pred)
-            child_node = TreeNode(board, node, src, dst, probability)
+            child_node = TreeNode(board.copy(), node, src, dst, probability)
 
             # Set the value of the node to the value prediction from the neural network
             child_node.score = value_pred
@@ -118,16 +116,20 @@ class Mcst:
             board.move_piece(next_state[0], next_state[1])
         return board.get_final_reward()
 
-    def backpropagate(self, node, score):
-        while node is not None:
-            # update node's visits
-            node.visits += 1
+    def backpropagate(self, node):
+        if node is None:
+            return
 
-            # update node's score
-            node.score += score
+        node.visits += 1
+        prev = node.parent
+        while prev is not None:
+            # update parent's visits
+            prev.visits += 1
 
-            # set node to parent
-            node = node.parent
+            # update parent's score
+            prev.score += node.score
+
+            prev = prev.parent
 
     def get_best_move(self, node, exploration_constant):
         best_score = float('-inf')

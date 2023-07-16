@@ -5,11 +5,15 @@ from ChineseChessBoard import ChineseChessBoard
 
 
 def deserialize(line):
+    arr = line.split(",")
+    if len(arr) == 1:
+        return []
+
     board = []
     for i in range(10):
         m = []
         for j in range(9):
-            m.append(line[i * 9 + j])
+            m.append(arr[0][i * 9 + j])
         board.append(m)
     return board
 
