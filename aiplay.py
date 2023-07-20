@@ -10,7 +10,9 @@ def ai_play_one_round(neural_model, search_number):
     game_record = []
 
     mcst = Mcst(neural_model)
-    node = mcst.search(board, search_number, None)
+    node = mcst.start(board, search_number)
+
+    print(f"red from {node.source} to {node.target}")
 
     if node is None or node.source is None or node.target is None:
         logger.info("return error node %s", str(node))
@@ -23,7 +25,12 @@ def ai_play_one_round(neural_model, search_number):
         next_board.move_piece(node.source, node.target)
 
         mcst.update_root(node.source, node.target)
-        node = mcst.search(next_board, search_number - mcst.root.visits, (node.source, node.target))
+
+        turn = "red" if node.board.is_red_turn else "black"
+
+        node = mcst.search(search_number - mcst.root.visits)
+
+        print(f"{turn} from {node.source} to {node.target}")
 
         if node is None or node.source is None or node.target is None:
             logger.info("return error node %s", str(node))
@@ -63,5 +70,5 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
 
 
 if __name__ == '__main__':
-    ai_play(create_chinese_chess_model(), 300, 1000, "records/record")
+    ai_play(create_chinese_chess_model(), 30, 1000, "records/record")
     exit()

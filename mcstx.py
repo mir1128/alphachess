@@ -57,16 +57,36 @@ class Mcst:
         # fall back to creating a new tree
         self.root = TreeNode(self.root.board.copy(), None, source, target, None)
 
-    def search(self, initial_state, num_searches, last_step):
-        src, dst = last_step if last_step is not None else (None, None)
-        self.root = TreeNode(initial_state, None, src, dst, None)
+    def start(self, initial_state, num_searches):
+
+        print(f"start search {num_searches} times.")
+
+        self.root = TreeNode(initial_state, None, None, None, None)
 
         for _ in range(num_searches):
             node = self.select(self.root)
-
-            # score = self.rollout(node.board)
             self.backpropagate(node)
-            print(f"Loop {_ + 1}/{num_searches}")
+            # print(f"Loop {_ + 1}/{num_searches}")
+        try:
+            return self.get_best_move(self.root, 0)
+        except:
+            pass
+
+    def search(self, num_searches):
+        print(f"search count: {num_searches}")
+        # Print the number of visits for each child node
+        # if self.root.children:
+        #     print("Number of visits for each child node at the start of search:")
+        #     for child in self.root.children:
+        #         print(f"Child {child.source}->{child.target}: {child.visits} visits,
+        #         {child.score} score {child.probability} probability")
+
+        for _ in range(num_searches):
+            node = self.select(self.root)
+            self.backpropagate(node)
+
+            # print(f"Loop {_ + 1}/{num_searches}")
+
         try:
             return self.get_best_move(self.root, 0)
         except:
@@ -94,7 +114,7 @@ class Mcst:
             child_node = TreeNode(board.copy(), node, src, dst, probability)
 
             # Set the value of the node to the value prediction from the neural network
-            child_node.score = value_pred
+            child_node.score = value_pred.item()
 
             node.children.append(child_node)
 
@@ -105,18 +125,6 @@ class Mcst:
             best_child = max(node.children, key=lambda child: child.probability)
             return best_child
         return None
-
-    # def expand(self, node):
-    #     next_states = node.board.generate_next_states()
-    #     for state in next_states:
-    #         child_node = TreeNode(state[0], node, state[1], state[2])
-    #         node.children.append(child_node)
-    #
-    #     node.is_fully_expanded = True
-    #
-    #     if node.children:
-    #         return random.choice(node.children)
-    #     return None
 
     def rollout(self, board):
         # Here, you need to implement a function to simulate a complete game
@@ -152,7 +160,6 @@ class Mcst:
         for child_node in node.children:
             current_player = 1 if child_node.board.is_red_turn else -1
 
-            # ucb1 = (score / N_i) + p * sqrt(log(total)/N_i)
             # puct = (score / N_i) + p * sqrt(total)/ (N_i + 1)
             exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
             exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (1 + child_node.visits)
@@ -200,6 +207,7 @@ def create_uci_labels():
 
     return labels_array
 
+
 def to_uci_label(src, dst):
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
     numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -210,7 +218,9 @@ def to_uci_label(src, dst):
 
     return uci_label
 
+
 uci_labels = create_uci_labels()
+
 
 def get_probability(src, dst, policy_pred):
     # Convert the source and destination coordinates to a UCI label
@@ -271,6 +281,7 @@ def to_tensor(node : TreeNode):
 
     return tensor
 
+
 def test_to_tensor():
     test_board = ChineseChessBoard()
     # Create a root node
@@ -287,12 +298,14 @@ def test_to_tensor():
         tensor = to_tensor(node)
         root = node
 
+
 def test_uci():
     assert to_uci_label((0, 4), (1, 4)) == 'e9e8', "Error in test case 1"
     assert to_uci_label((0, 0), (0, 1)) == 'a9b9', "Error in test case 2"
     assert to_uci_label((0, 1), (2, 2)) == 'b9c7', "Error in test case 3"
     assert to_uci_label((2, 1), (5, 1)) == 'b7b4', "Error in test case 4"
     assert to_uci_label((3, 0), (4, 0)) == 'a6a5', "Error in test case 5"
+
 
 if __name__ == '__main__':
     test_to_tensor()
