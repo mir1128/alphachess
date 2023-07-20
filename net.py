@@ -1,4 +1,4 @@
-from keras.layers import Conv2D, BatchNormalization, ReLU, Dense, Add, Flatten, Input, Activation
+from keras.layers import Conv2D, BatchNormalization, Dense, Add, Flatten, Input, Activation
 from keras.models import Model
 
 # 定义残差块

@@ -1,14 +1,16 @@
-from mctsx import Mcst
 from ChineseChessBoard import ChineseChessBoard
 from log.logger import logger
+from mcstx import Mcst
 from net import create_chinese_chess_model
 import datetime
+
 
 def ai_play_one_round(neural_model, search_number):
     board = ChineseChessBoard()
     game_record = []
 
-    node = Mcst(neural_model).search(board, search_number, None)
+    mcst = Mcst(neural_model)
+    node = mcst.search(board, search_number, None)
 
     if node is None or node.source is None or node.target is None:
         logger.info("return error node %s", str(node))
@@ -20,7 +22,8 @@ def ai_play_one_round(neural_model, search_number):
         next_board = node.board.copy()
         next_board.move_piece(node.source, node.target)
 
-        node = Mcst(neural_model).search(next_board, search_number, (node.source, node.target))
+        mcst.update_root(node.source, node.target)
+        node = mcst.search(next_board, search_number - mcst.root.visits, (node.source, node.target))
 
         if node is None or node.source is None or node.target is None:
             logger.info("return error node %s", str(node))
@@ -31,9 +34,6 @@ def ai_play_one_round(neural_model, search_number):
     game_record = [(record[0], record[1], winner) for record in game_record]
 
     return game_record
-
-
-import datetime
 
 
 def save_game_record(game_record, filename):
@@ -60,6 +60,7 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
             filename = f"{filename_prefix}_{timestamp}.txt"
 
         save_game_record(game_record, filename)
+
 
 if __name__ == '__main__':
     ai_play(create_chinese_chess_model(), 300, 1000, "records/record")

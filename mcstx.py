@@ -4,6 +4,7 @@ import numpy as np
 
 from ChineseChessBoard import ChineseChessBoard
 
+
 class TreeNode:
     def __init__(self, board: ChineseChessBoard, parent, source, target, policy_pred = None):
         # init associated board state
@@ -38,10 +39,23 @@ class TreeNode:
         # init current node's children
         self.children = []
 
+
 class Mcst:
     def __init__(self, model):
         self.root = None
         self.model = model
+
+    def update_root(self, source, target):
+        # Find the child node corresponding to the selected move
+        for child in self.root.children:
+            if child.source == source and child.target == target:
+                self.root = child
+                self.root.parent = None
+                return
+        # If the move was not in the children of the root
+        # (which should not happen if the tree search is working correctly),
+        # fall back to creating a new tree
+        self.root = TreeNode(self.root.board.copy(), None, source, target, None)
 
     def search(self, initial_state, num_searches, last_step):
         src, dst = last_step if last_step is not None else (None, None)
@@ -52,7 +66,7 @@ class Mcst:
 
             # score = self.rollout(node.board)
             self.backpropagate(node)
-            # print(f"Loop {_ + 1}/{num_searches}")
+            print(f"Loop {_ + 1}/{num_searches}")
         try:
             return self.get_best_move(self.root, 0)
         except:

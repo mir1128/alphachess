@@ -8,7 +8,7 @@ from pygame.locals import *
 
 from ChineseChessBoard import ChineseChessBoard
 from log.logger import logger
-from mctsx import Mcst
+from mcstx import Mcst
 import net
 
 

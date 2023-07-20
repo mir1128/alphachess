@@ -1,5 +1,5 @@
 from ChineseChessBoard import ChineseChessBoard
-from mcts import MCTS
+from mcst import MCTS
 
 
 class GameLogic:
