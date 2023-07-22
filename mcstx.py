@@ -66,7 +66,7 @@ class Mcst:
         for _ in range(num_searches):
             node = self.select(self.root)
             self.backpropagate(node)
-            # print(f"Loop {_ + 1}/{num_searches}")
+            print(f"Loop {_ + 1}/{num_searches}")
         try:
             return self.get_best_move(self.root, 0)
         except:

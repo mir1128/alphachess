@@ -3,7 +3,7 @@ import subprocess
 
 
 def worker():
-    subprocess.call(["python", "aiplay.py"])
+    subprocess.call(["E:\\myprojects\\alphachess\\venv\\Scripts\\python", "aiplay.py"])
 
 
 if __name__ == "__main__":

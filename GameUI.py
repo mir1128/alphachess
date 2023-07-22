@@ -2,21 +2,20 @@
 
 from sys import exit
 
-import easygui
 import pygame
 from pygame.locals import *
+from tensorflow.keras.models import load_model
 
 from ChineseChessBoard import ChineseChessBoard
 from log.logger import logger
 from mcstx import Mcst
-import net
 
 
 class GameUI(object):
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("cchess")
-        self.model = net.create_chinese_chess_model()
+        self.model = load_model('model.h5')
         self.__screen = pygame.display.set_mode((720, 800), 0, 32)
         self.__background = pygame.image.load('images/boardchess.jpg').convert()
 
@@ -75,7 +74,7 @@ class GameUI(object):
                                 break
 
                             # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
-                            node = Mcst(self.model).search(board, 20, (src, dst))
+                            node = Mcst(self.model).start(board, 1000)
 
                             if node is None or node.source is None or node.target is None:
                                 logger.info("mcst return invalid node: %s", str(node))
@@ -104,22 +103,27 @@ class GameUI(object):
                 self.put_piece(piece, pos)
         pygame.display.update()
 
+
 def get_piece_by_position(board, button_up_pos):
     row, col = to_board_pos(button_up_pos)
     return board.board[row][col]
 
+
 def to_board_pos(pos):
     x, y = pos
     return int(y/80), int(x/80)
+
 
 def is_same_side(board, src, dst):
     src_row, src_col = src
     dst_row, dst_col = dst
     return board.board[src_row][src_col].islower() == board.board[dst_row][dst_col]
 
+
 def show_message_box(title, message):
     # easygui.msgbox(message, title)
     pass
+
 
 def game_over(board):
     if board.is_draw():
@@ -128,6 +132,7 @@ def game_over(board):
         show_message_box('游戏结束', '红棋胜利')
     else:
         show_message_box('游戏结束', '黑棋胜利')
+
 
 if __name__ == '__main__':
     e = GameUI()

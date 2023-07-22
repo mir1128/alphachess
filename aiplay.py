@@ -1,7 +1,8 @@
+from tensorflow.keras.models import load_model
+
 from ChineseChessBoard import ChineseChessBoard
 from log.logger import logger
 from mcstx import Mcst
-from net import create_chinese_chess_model
 import datetime
 
 
@@ -70,5 +71,5 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
 
 
 if __name__ == '__main__':
-    ai_play(create_chinese_chess_model(), 30, 1000, "records/record")
+    ai_play(load_model('model.h5'), 300, 1000, "records/record")
     exit()
