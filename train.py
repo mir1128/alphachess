@@ -5,7 +5,7 @@ from tensorflow.keras.callbacks import TensorBoard
 import time
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import Callback
-
+from tensorflow.keras.models import load_model
 
 from net import create_chinese_chess_model
 
@@ -78,13 +78,13 @@ def to_tensor(line):
 
 
 # 创建模型
-model = create_chinese_chess_model()
+model = load_model("model_wukong_v16.h5")
 model.compile(optimizer=optimizer, loss=loss_fn)
 
 # 读取和准备数据
 data = []
 labels = []
-with open('E:\\myprojects\\crawl\\result.txt', 'r') as f:
+with open('E:\\myprojects\\crawl\\ccbridge_arena\\qipu_from_ccbridge_arena_result.txt', 'r') as f:
     for line in f:
         input_data, label = to_tensor(line)
         data.append(input_data)
@@ -114,9 +114,17 @@ class PlotLosses(Callback):
         plt.show()
 
 
-plot_losses = PlotLosses()
-# 训练模型
-model.fit(data, labels, epochs=30, batch_size=32, callbacks=[plot_losses])
+class CustomSaver(Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        if epoch % 4 == 0:  # or save after some epoch, each k-th epoch etc.
+            filename = 'model_v' + str(epoch) + '.h5'
+            self.model.save(filename)
 
-# 保存模型
-model.save('model.h5')
+
+saver = CustomSaver()
+plot_losses = PlotLosses()
+
+# 训练模型
+model.fit(data, labels, epochs=20, batch_size=512, callbacks=[plot_losses, saver])
+model.save("model_wukong_arena_20epoch.h5")
+

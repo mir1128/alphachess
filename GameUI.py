@@ -15,7 +15,7 @@ class GameUI(object):
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("cchess")
-        self.model = load_model('model.h5')
+        self.model = load_model('model_wukong_arena_20epoch.h5')
         self.__screen = pygame.display.set_mode((720, 800), 0, 32)
         self.__background = pygame.image.load('images/boardchess.jpg').convert()
 
@@ -74,7 +74,7 @@ class GameUI(object):
                                 break
 
                             # board_state, ai_move_start_pos, ai_move_end_pos = Mcts().search(board, 300)
-                            node = Mcst(self.model).start(board, 1000)
+                            node = Mcst(self.model).start(board, 200)
 
                             if node is None or node.source is None or node.target is None:
                                 logger.info("mcst return invalid node: %s", str(node))

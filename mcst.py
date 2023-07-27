@@ -71,7 +71,7 @@ class MCTS:
 
         # Update the root node with the results from all threads
         for result in results:
-            self.backpropagation(node, result)
+            ll.backpropagation(node, result)
 
     def search(self, num_searches):
         for _ in range(num_searches):

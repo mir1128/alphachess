@@ -12,7 +12,7 @@ def create_chinese_chess_model():
     x = Activation('relu')(x)
 
     # 定义残差网络
-    for _ in range(13):
+    for _ in range(7):
         identity = x
 
         x = Conv2D(filters=num_filters, kernel_size=3, padding='same')(x)

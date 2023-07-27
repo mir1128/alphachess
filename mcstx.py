@@ -1,5 +1,6 @@
 import math
 import random
+
 import numpy as np
 
 from ChineseChessBoard import ChineseChessBoard
@@ -74,13 +75,6 @@ class Mcst:
 
     def search(self, num_searches):
         print(f"search count: {num_searches}")
-        # Print the number of visits for each child node
-        # if self.root.children:
-        #     print("Number of visits for each child node at the start of search:")
-        #     for child in self.root.children:
-        #         print(f"Child {child.source}->{child.target}: {child.visits} visits,
-        #         {child.score} score {child.probability} probability")
-
         for _ in range(num_searches):
             node = self.select(self.root)
             self.backpropagate(node)
@@ -139,18 +133,14 @@ class Mcst:
         return board.get_final_reward()
 
     def backpropagate(self, node):
-        if node is None:
+        if node is None or node.probability is None:
             return
 
         node.visits += 1
         prev = node.parent
         while prev is not None:
-            # update parent's visits
             prev.visits += 1
-
-            # update parent's score
             prev.score += node.score
-
             prev = prev.parent
 
     def get_best_move(self, node, exploration_constant):
@@ -162,6 +152,8 @@ class Mcst:
 
             # puct = (score / N_i) + p * sqrt(total)/ (N_i + 1)
             exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
+
+            exploration_constant = exploration_constant / math.sqrt(1 + child_node.visits)
             exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (1 + child_node.visits)
 
             move_score = exploitation + exploration

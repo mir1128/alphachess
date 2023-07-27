@@ -71,5 +71,5 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
 
 
 if __name__ == '__main__':
-    ai_play(load_model('model.h5'), 300, 1000, "records/record")
+    ai_play(load_model('model.h5'), 1000, 1000, "records/record")
     exit()
