@@ -7,7 +7,7 @@ from ChineseChessBoard import ChineseChessBoard
 
 
 class TreeNode:
-    def __init__(self, board: ChineseChessBoard, parent, source, target, policy_pred = None):
+    def __init__(self, board: ChineseChessBoard, parent, source, target, policy_pred=None):
         # init associated board state
         self.board = board
         self.source = source
@@ -39,6 +39,9 @@ class TreeNode:
 
         # init current node's children
         self.children = []
+
+        # virtual loss
+        self.virtual_loss = 0
 
 
 class Mcst:
@@ -90,6 +93,7 @@ class Mcst:
         while not node.is_terminal:
             if node.is_fully_expanded:
                 node = self.get_best_move(node, 2)
+                node.virtual_loss += 1
             else:
                 return self.expand(node)
         return node
@@ -137,10 +141,13 @@ class Mcst:
             return
 
         node.visits += 1
+        node.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
         prev = node.parent
         while prev is not None:
             prev.visits += 1
+            prev.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
             prev.score += node.score
+
             prev = prev.parent
 
     def get_best_move(self, node, exploration_constant):
@@ -154,7 +161,8 @@ class Mcst:
             exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
 
             exploration_constant = exploration_constant / math.sqrt(1 + child_node.visits)
-            exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (1 + child_node.visits)
+            exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (
+                        1 + child_node.visits)
 
             move_score = exploitation + exploration
 
@@ -167,6 +175,7 @@ class Mcst:
                 best_moves.append(child_node)
 
         return random.choice(best_moves)
+
 
 def create_uci_labels():
     labels_array = []
@@ -206,7 +215,7 @@ def to_uci_label(src, dst):
 
     # Convert the source and destination tuples to UCI labels
     # Reverse the order of the coordinates to match the UCI format
-    uci_label = letters[src[1]] + numbers[9-src[0]] + letters[dst[1]] + numbers[9-dst[0]]
+    uci_label = letters[src[1]] + numbers[9 - src[0]] + letters[dst[1]] + numbers[9 - dst[0]]
 
     return uci_label
 
@@ -227,7 +236,8 @@ def get_probability(src, dst, policy_pred):
 
     return probability
 
-def to_tensor(node : TreeNode):
+
+def to_tensor(node: TreeNode):
     # one-hot representation for each piece
     brd = node.board
     turn = 1 if brd.is_red_turn else 0
