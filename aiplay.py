@@ -11,7 +11,7 @@ def ai_play_one_round(neural_model, search_number):
     game_record = []
 
     mcst = Mcst(neural_model)
-    node = mcst.start(board, search_number)
+    node = mcst.parallel_start(board, search_number)
 
     print(f"red from {node.source} to {node.target}")
 
@@ -29,7 +29,7 @@ def ai_play_one_round(neural_model, search_number):
 
         turn = "red" if node.board.is_red_turn else "black"
 
-        node = mcst.search(search_number - mcst.root.visits)
+        node = mcst.parallel_search(search_number - mcst.root.visits)
 
         print(f"{turn} from {node.source} to {node.target}")
 
@@ -71,5 +71,5 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
 
 
 if __name__ == '__main__':
-    ai_play(load_model('model.h5'), 1000, 1000, "records/record")
+    ai_play(load_model('model_wukong_arena_20epoch.h5'), 1000, 1000, "records/record")
     exit()

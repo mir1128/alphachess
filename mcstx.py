@@ -1,5 +1,7 @@
+import concurrent.futures
 import math
 import random
+import threading
 
 import numpy as np
 
@@ -42,6 +44,9 @@ class TreeNode:
 
         # virtual loss
         self.virtual_loss = 0
+
+        # for parallel search
+        self.lock = threading.RLock()
 
 
 class Mcst:
@@ -93,36 +98,38 @@ class Mcst:
         while not node.is_terminal:
             if node.is_fully_expanded:
                 node = self.get_best_move(node, 2)
-                node.virtual_loss += 1
+                with node.lock:
+                    node.virtual_loss += 1
             else:
                 return self.expand(node)
         return node
 
     def expand(self, node):
-        next_states = node.board.generate_next_states()
+        with node.lock:
+            next_states = node.board.generate_next_states()
 
-        # Get the policy and value predictions from the neural network
-        state_tensor = to_tensor(node)
-        policy_pred, value_pred = self.model.predict(np.expand_dims(state_tensor, axis=0))
-        policy_pred = np.squeeze(policy_pred, axis=0)
+            # Get the policy and value predictions from the neural network
+            state_tensor = to_tensor(node)
+            policy_pred, value_pred = self.model.predict(np.expand_dims(state_tensor, axis=0))
+            policy_pred = np.squeeze(policy_pred, axis=0)
 
-        for i, next_state in enumerate(next_states):
-            board, src, dst = next_state
-            probability = get_probability(src, dst, policy_pred)
-            child_node = TreeNode(board.copy(), node, src, dst, probability)
+            for i, next_state in enumerate(next_states):
+                board, src, dst = next_state
+                probability = get_probability(src, dst, policy_pred)
+                child_node = TreeNode(board.copy(), node, src, dst, probability)
 
-            # Set the value of the node to the value prediction from the neural network
-            child_node.score = value_pred.item()
+                # Set the value of the node to the value prediction from the neural network
+                child_node.score = value_pred.item()
 
-            node.children.append(child_node)
+                node.children.append(child_node)
 
-        node.is_fully_expanded = True
+            node.is_fully_expanded = True
 
-        if node.children:
-            # Select the child with the highest prior probability from the policy head
-            best_child = max(node.children, key=lambda child: child.probability)
-            return best_child
-        return None
+            if node.children:
+                # Select the child with the highest prior probability from the policy head
+                best_child = max(node.children, key=lambda child: child.probability)
+                return best_child
+            return None
 
     def rollout(self, board):
         # Here, you need to implement a function to simulate a complete game
@@ -140,13 +147,15 @@ class Mcst:
         if node is None or node.probability is None:
             return
 
-        node.visits += 1
-        node.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
-        prev = node.parent
+        with node.lock:
+            node.visits += 1
+            node.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
+            prev = node.parent
         while prev is not None:
-            prev.visits += 1
-            prev.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
-            prev.score += node.score
+            with prev.lock:
+                prev.visits += 1
+                prev.virtual_loss -= 1  # 搜索完成后把虚拟损失加回来
+                prev.score += node.score
 
             prev = prev.parent
 
@@ -175,6 +184,29 @@ class Mcst:
                 best_moves.append(child_node)
 
         return random.choice(best_moves)
+
+    def parallel_start(self, initial_state, num_searches):
+        print(f"start search {num_searches} times.")
+        self.root = TreeNode(initial_state, None, None, None, None)
+
+        return self.parallel_search(num_searches)
+
+    def parallel_search(self, num_searches):
+        print(f"search count: {num_searches}")
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(self.search_once) for _ in range(num_searches)]
+            for i, future in enumerate(concurrent.futures.as_completed(futures)):
+                print(f"Loop {i + 1}/{num_searches}")
+
+        try:
+            return self.get_best_move(self.root, 0)
+        except:
+            pass
+
+    def search_once(self):
+        node = self.select(self.root)
+        self.backpropagate(node)
 
 
 def create_uci_labels():
