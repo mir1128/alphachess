@@ -163,27 +163,30 @@ class Mcst:
         best_score = float('-inf')
         best_moves = []
 
-        for child_node in node.children:
-            current_player = 1 if child_node.board.is_red_turn else -1
+        try:
+            for child_node in node.children:
+                current_player = 1 if child_node.board.is_red_turn else -1
 
-            # puct = (score / N_i) + p * sqrt(total)/ (N_i + 1)
-            exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
+                # puct = (score / N_i) + p * sqrt(total)/ (N_i + 1)
+                exploitation = (current_player * child_node.score / child_node.visits) if child_node.visits > 0 else 0
 
-            exploration_constant = exploration_constant / math.sqrt(1 + child_node.visits)
-            exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (
-                        1 + child_node.visits)
+                exploration_constant = exploration_constant / math.sqrt(1 + child_node.visits)
+                exploration = exploration_constant * child_node.probability * math.sqrt(node.visits) / (
+                            1 + child_node.visits)
 
-            move_score = exploitation + exploration
+                move_score = exploitation + exploration
 
-            if move_score > best_score:
-                best_score = move_score
-                best_moves = [child_node]
+                if move_score > best_score:
+                    best_score = move_score
+                    best_moves = [child_node]
 
-            # found as good move as already available
-            elif move_score == best_score:
-                best_moves.append(child_node)
+                # found as good move as already available
+                elif move_score == best_score:
+                    best_moves.append(child_node)
 
-        return random.choice(best_moves)
+            return random.choice(best_moves)
+        except Exception as e:
+            print("An exception occurred: ", e)
 
     def parallel_start(self, initial_state, num_searches):
         print(f"start search {num_searches} times.")
@@ -201,8 +204,8 @@ class Mcst:
 
         try:
             return self.get_best_move(self.root, 0)
-        except:
-            pass
+        except Exception as e:
+            print("An exception occurred: ", e)
 
     def search_once(self):
         node = self.select(self.root)

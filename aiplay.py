@@ -31,11 +31,11 @@ def ai_play_one_round(neural_model, search_number):
 
         node = mcst.parallel_search(search_number - mcst.root.visits)
 
-        print(f"{turn} from {node.source} to {node.target}")
-
         if node is None or node.source is None or node.target is None:
             logger.info("return error node %s", str(node))
             return None
+
+        print(f"{turn} from {node.source} to {node.target}")
 
     # save the result of the game
     winner = 1 if node.board.winner == 'red' else -1 if node.board.winner == 'black' else 0
@@ -71,5 +71,5 @@ def ai_play(neural_model, search_number, rounds, filename_prefix):
 
 
 if __name__ == '__main__':
-    ai_play(load_model('model_wukong_arena_20epoch.h5'), 1000, 1000, "records/record")
+    ai_play(load_model('model_wukong_arena_20epoch.h5'), 10, 1000, "records/record")
     exit()

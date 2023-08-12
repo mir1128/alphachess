@@ -16,7 +16,7 @@ class ChineseChessBoard(GameInterface):
             ['_', '_', '_', '_', '_', '_', '_', '_', '_'],
             ['R', 'N', 'B', 'A', 'K', 'A', 'B', 'N', 'R']
         ]
-        self.is_red_turn = True
+        self.is_red_turn = False
         self.is_game_over = False
         self.num_steps_no_capture = 0
         self.winner = None
